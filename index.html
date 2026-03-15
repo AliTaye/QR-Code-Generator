@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مولد رموز QR</title>
+    
+    <!-- خط تجوال للغة العربية -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- مكتبة Tailwind CSS للتصميم -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- إعدادات Tailwind لتخصيص الخط -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Tajawal', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- مكتبة QRCode.js لتوليد الرموز -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+        /* إضافة بعض اللمسات الحركية البسيطة */
+        .fade-in {
+            animation: fadeIn 0.4s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
+
+    <!-- حاوية التطبيق -->
+    <div class="bg-white rounded-3xl shadow-xl w-full max-w-md p-8 overflow-hidden relative">
+        
+        <!-- الديكور العلوي -->
+        <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+
+        <!-- ترويسة التطبيق -->
+        <div class="text-center mb-8">
+            <div class="bg-blue-100 text-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800">صانع رموز QR</h1>
+            <p class="text-gray-500 mt-2 text-sm">أدخل أي رابط وسنقوم بتحويله إلى رمز QR فوراً</p>
+        </div>
+
+        <!-- منطقة الإدخال -->
+        <div class="space-y-4">
+            <div>
+                <label for="urlInput" class="block text-sm font-medium text-gray-700 mb-1">الرابط (URL)</label>
+                <input 
+                    type="url" 
+                    id="urlInput" 
+                    placeholder="https://example.com" 
+                    class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-left dir-ltr"
+                    dir="ltr"
+                >
+                <!-- رسالة الخطأ (مخفية افتراضياً) -->
+                <p id="errorMessage" class="text-red-500 text-sm mt-2 hidden">الرجاء إدخال رابط صحيح!</p>
+            </div>
+
+            <button 
+                id="generateBtn" 
+                class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium py-3 px-4 rounded-xl hover:shadow-lg hover:from-blue-700 hover:to-indigo-700 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+            >
+                <span>توليد الرمز</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- منطقة عرض الكود المولد -->
+        <div id="resultContainer" class="mt-8 pt-8 border-t border-gray-100 hidden fade-in">
+            <div class="flex flex-col items-center">
+                <!-- المربع الذي سيحتوي على الـ QR -->
+                <div class="p-4 bg-white rounded-2xl shadow-[0_0_15px_rgba(0,0,0,0.05)] border border-gray-100 mb-4">
+                    <div id="qrcode"></div>
+                </div>
+
+                <!-- زر التحميل -->
+                <a 
+                    id="downloadBtn" 
+                    class="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                    <span>تحميل الصورة</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- المنطق البرمجي (JavaScript) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlInput = document.getElementById('urlInput');
+            const generateBtn = document.getElementById('generateBtn');
+            const resultContainer = document.getElementById('resultContainer');
+            const qrcodeElement = document.getElementById('qrcode');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const errorMessage = document.getElementById('errorMessage');
+
+            let currentQR = null;
+
+            // دالة توليد الرمز
+            const generateQR = () => {
+                const url = urlInput.value.trim();
+
+                // التحقق من أن الحقل ليس فارغاً
+                if (!url) {
+                    errorMessage.classList.remove('hidden');
+                    urlInput.classList.add('border-red-500', 'focus:ring-red-500');
+                    resultContainer.classList.add('hidden');
+                    return;
+                }
+
+                // إخفاء رسالة الخطأ إذا كان الإدخال صحيحاً
+                errorMessage.classList.add('hidden');
+                urlInput.classList.remove('border-red-500', 'focus:ring-red-500');
+
+                // مسح الرمز القديم إن وجد
+                qrcodeElement.innerHTML = '';
+                
+                // إنشاء الرمز الجديد
+                currentQR = new QRCode(qrcodeElement, {
+                    text: url,
+                    width: 200,
+                    height: 200,
+                    colorDark : "#1f2937", // لون غامق يتناسب مع التصميم
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H // مستوى تصحيح عالي
+                });
+
+                // إظهار منطقة النتيجة بتأثير حركي
+                resultContainer.classList.remove('hidden');
+
+                // تجهيز زر التحميل بعد ثانية لضمان اكتمال رسم الرمز
+                setTimeout(() => {
+                    const canvas = qrcodeElement.querySelector('canvas');
+                    const img = qrcodeElement.querySelector('img');
+                    
+                    let imageSource = '';
+                    if (canvas) {
+                        imageSource = canvas.toDataURL("image/png");
+                    } else if (img) {
+                        imageSource = img.src;
+                    }
+
+                    if(imageSource) {
+                        downloadBtn.href = imageSource;
+                        downloadBtn.download = 'QR_Code.png';
+                    }
+                }, 300);
+            };
+
+            // التفاعل مع زر التوليد
+            generateBtn.addEventListener('click', generateQR);
+
+            // إمكانية التوليد عند الضغط على زر Enter
+            urlInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    generateQR();
+                }
+            });
+
+            // إخفاء رسالة الخطأ بمجرد بدء الكتابة
+            urlInput.addEventListener('input', () => {
+                if(urlInput.value.trim() !== '') {
+                    errorMessage.classList.add('hidden');
+                    urlInput.classList.remove('border-red-500', 'focus:ring-red-500');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
